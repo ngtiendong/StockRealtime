@@ -1,0 +1,17 @@
+*.log
+
+*.pot
+
+*.pyc
+
+# User-specific stuff:
+**/currency_history.txt
+**/stock_history.txt
+**/realtime.log
+**/chromedriver
+
+*/*/*/__pycache__/
+
+*/*/__pycache__/
+
+*/__pycache__/

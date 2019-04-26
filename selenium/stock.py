@@ -10,11 +10,12 @@ from selenium.common.exceptions import NoSuchElementException
 import re, json, sys, os
 from threading import Thread
 import threading
+import logging
 from time import sleep
 from datetime import datetime
 from config import *
 
-sys.path.insert(0,os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from database.mysql import MySQL
 
@@ -36,10 +37,12 @@ class RealtimeCrawler:
         self.driver = webdriver.Chrome(executable_path=DRIVER, chrome_options=chrome_options)
         self.wait = WebDriverWait(self.driver, 10)
 
+        logging.basicConfig(filename='realtime.log', level=logging.INFO)
+
         if type == 0:
             # CURRENCY
             self.driver.get("https://vn.tradingview.com/symbols/EURUSD/")
-            currency = threading.Thread(target=self.get_realtime_data, kwargs= {
+            currency = threading.Thread(target=self.get_realtime_data, kwargs={
                 "table": TABLE_REALTIME_CURRENCY,
                 "symbol": "USD",
                 "type": type,
@@ -111,7 +114,7 @@ class RealtimeCrawler:
     def get_value_element(self, selector):
         value = self.driver.find_element_by_xpath(selector).text
         # print(value)
-        return float(value)
+        return value
 
     def get_realtime_data(self, table, symbol, type, wait_time, xpath_value, xpath_change_1, xpath_change_2):
         self.wait.until(EC.visibility_of_element_located((By.XPATH, xpath_value)))
@@ -136,13 +139,13 @@ class RealtimeCrawler:
                     change_2 = re.match(r'.*?\((.*?)\).*', change).group(1)
 
                 # Save to database / currency_in_day
-                print(table, symbol, new_value, change_1, change_2)
+                logging.info(str(datetime.now()) + ": " + table + " " + symbol + " " + new_value + " " + change_1 + " " + change_2)
                 self.database.insert_data_realtime(
                     table=table,
                     symbol=symbol,
                     value=new_value,
                     change_1=change_1,
-                    change_2=change_2.replace("(","").replace(")",""),
+                    change_2=change_2.replace("(", "").replace(")", ""),
                     moment=moment
                 )
 
@@ -158,7 +161,6 @@ class RealtimeCrawler:
         # self.driver.find_element_by_css_selector("div[data-click='profile_icon']").click()
 
         self.driver.find_element_by_css_selector("a[data-tab-key='friends']").click()
-
 
         # continuous scroll until no more new friends loaded
         num_of_loaded_friends = len(self._get_friends_list())
@@ -187,4 +189,8 @@ if __name__ == '__main__':
 
     currency.join()
     stocks.join()
+
+
+
+
 
