@@ -9,6 +9,11 @@
 **/stock_history.txt
 **/realtime.log
 **/chromedriver
+**/.idea/workspace.xml
+**/.idea/tasks.xml
+**/.idea/dictionaries
+**/.idea/vcs.xml
+**/.idea/jsLibraryMappings.xml
 
 **/global_config.py
 
