@@ -10,6 +10,8 @@
 **/realtime.log
 **/chromedriver
 
+**/global_config.py
+
 */*/*/__pycache__/
 
 */*/__pycache__/
