@@ -178,17 +178,17 @@ class RealtimeCrawler:
 
 
 if __name__ == '__main__':
-    # currency = threading.Thread(target=RealtimeCrawler, kwargs={
-    #     'type': 0
-    # })
+    currency = threading.Thread(target=RealtimeCrawler, kwargs={
+        'type': 0
+    })
     stocks = threading.Thread(target=RealtimeCrawler, kwargs={
         'type': 1
     })
 
-    # currency.start()
+    currency.start()
     stocks.start()
 
-    # currency.join()
+    currency.join()
     stocks.join()
 
 
