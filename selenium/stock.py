@@ -7,7 +7,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common.exceptions import NoSuchElementException
 
-import re, json, sys, os
+import re, json, sys, os, time
 from threading import Thread
 import threading
 import logging
@@ -124,9 +124,9 @@ class RealtimeCrawler:
             try:
                 # VNIndex
                 new_value = self.get_value_element(xpath_value)
-                WebDriverWait(self.driver, wait_time).until(lambda value: new_value != stock_value)
+                WebDriverWait(self.driver, wait_time, poll_frequency=1).until(lambda value: new_value != stock_value)
                 stock_value = new_value
-                moment = datetime.now()
+                # moment = datetime.now()
                 if type == 0:
                     # CURRENCY
                     change_1 = self.driver.find_element_by_xpath(xpath_change_1).text
@@ -146,11 +146,12 @@ class RealtimeCrawler:
                     value=new_value,
                     change_1=change_1,
                     change_2=change_2.replace("(", "").replace(")", ""),
-                    moment=moment
+                    moment=datetime.now()
                 )
 
             except TimeoutException:
-                continue  # no more friends loaded
+                time.sleep(2)
+                pass
 
     def _get_friends_list(self):
         self.wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, "li._698")))
@@ -177,17 +178,17 @@ class RealtimeCrawler:
 
 
 if __name__ == '__main__':
-    currency = threading.Thread(target=RealtimeCrawler, kwargs={
-        'type': 0
-    })
+    # currency = threading.Thread(target=RealtimeCrawler, kwargs={
+    #     'type': 0
+    # })
     stocks = threading.Thread(target=RealtimeCrawler, kwargs={
         'type': 1
     })
 
-    currency.start()
+    # currency.start()
     stocks.start()
 
-    currency.join()
+    # currency.join()
     stocks.join()
 
 
