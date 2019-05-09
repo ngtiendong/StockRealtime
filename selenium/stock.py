@@ -41,6 +41,7 @@ class RealtimeCrawler:
 
         if type == 0:
             # CURRENCY
+            self.database_currency = MySQL()
             self.driver.get("https://vn.tradingview.com/symbols/EURUSD/")
             currency = threading.Thread(target=self.get_realtime_data, kwargs={
                 "table": TABLE_REALTIME_CURRENCY,
@@ -49,7 +50,8 @@ class RealtimeCrawler:
                 "wait_time": WAIT_CURRENCY,
                 "xpath_value": "//*[@id='anchor-page-1']/div/div[3]/div[1]/div/div/div/div[1]/div[1]",
                 "xpath_change_1": "//*[@id='anchor-page-1']/div/div[3]/div[1]/div/div/div/div[1]/div[3]/span[1]",
-                "xpath_change_2": "//*[@id='anchor-page-1']/div/div[3]/div[1]/div/div/div/div[1]/div[3]/span[2]"
+                "xpath_change_2": "//*[@id='anchor-page-1']/div/div[3]/div[1]/div/div/div/div[1]/div[3]/span[2]",
+                "database": self.database_currency
             })
             currency.start()
             currency.join()
@@ -57,7 +59,7 @@ class RealtimeCrawler:
         else:
             # STOCK
             self.driver.get("http://banggia2.ssi.com.vn/")
-
+            self.database_vnindex = MySQL()
             vnindex_stock = threading.Thread(target=self.get_realtime_data, kwargs={
                 "table": TABLE_REALTIME_STOCK,
                 "symbol": "VNIndex",
@@ -65,9 +67,11 @@ class RealtimeCrawler:
                 "wait_time": WAIT_STOCK,
                 "xpath_value": '//*[@id="tdHoseVnIndex"]',
                 "xpath_change_1": '//*[@id="tdHoseChangeIndex"]',
-                "xpath_change_2": ''
+                "xpath_change_2": '',
+                "database": self.database_vnindex
             })
 
+            self.database_vn30index = MySQL()
             vn30_stock = threading.Thread(target=self.get_realtime_data, kwargs={
                 "table": TABLE_REALTIME_STOCK,
                 "symbol": "VN30INDEX",
@@ -75,9 +79,11 @@ class RealtimeCrawler:
                 "wait_time": WAIT_STOCK,
                 "xpath_value": '//*[@id="tdHose30VnIndex"]',
                 "xpath_change_1": '//*[@id="tdHose30ChangeIndex"]',
-                "xpath_change_2": ''
+                "xpath_change_2": '',
+                "database": self.database_vn30index
             })
 
+            self.database_hnxindex = MySQL()
             hnxindex_stock = threading.Thread(target=self.get_realtime_data, kwargs={
                 "table": TABLE_REALTIME_STOCK,
                 "symbol": "HNXINDEX",
@@ -85,8 +91,11 @@ class RealtimeCrawler:
                 "wait_time": WAIT_STOCK,
                 "xpath_value": '//*[@id="tdHnxIndex"]',
                 "xpath_change_1": '//*[@id="tdHnxChangeIndex"]',
-                "xpath_change_2": ''
+                "xpath_change_2": '',
+                "database": self.database_hnxindex
             })
+
+            self.database_hnx30index = MySQL()
             hnx30_stock = threading.Thread(target=self.get_realtime_data, kwargs={
                 "table": TABLE_REALTIME_STOCK,
                 "symbol": "HNX30INDEX",
@@ -94,7 +103,8 @@ class RealtimeCrawler:
                 "wait_time": WAIT_STOCK,
                 "xpath_value": '//*[@id="tdHnx30Index"]',
                 "xpath_change_1": '//*[@id="tdHnx30ChangeIndex"]',
-                "xpath_change_2": ''
+                "xpath_change_2": '',
+                "database": self.database_hnx30index
             })
 
             vnindex_stock.start()
@@ -116,7 +126,7 @@ class RealtimeCrawler:
         # print(value)
         return value
 
-    def get_realtime_data(self, table, symbol, type, wait_time, xpath_value, xpath_change_1, xpath_change_2):
+    def get_realtime_data(self, table, symbol, type, wait_time, xpath_value, xpath_change_1, xpath_change_2, database):
         self.wait.until(EC.visibility_of_element_located((By.XPATH, xpath_value)))
         stock_value = self.get_value_element(xpath_value)
 
@@ -140,7 +150,7 @@ class RealtimeCrawler:
 
                 # Save to database / currency_in_day
                 logging.info(str(datetime.now()) + ": " + table + " " + symbol + " " + new_value + " " + change_1 + " " + change_2)
-                self.database.insert_data_realtime(
+                database.insert_data_realtime(
                     table=table,
                     symbol=symbol,
                     value=new_value,
