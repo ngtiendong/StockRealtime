@@ -51,6 +51,7 @@ class RealtimeCrawler:
                 "xpath_value": "//*[@id='anchor-page-1']/div/div[3]/div[1]/div/div/div/div[1]/div[1]",
                 "xpath_change_1": "//*[@id='anchor-page-1']/div/div[3]/div[1]/div/div/div/div[1]/div[3]/span[1]",
                 "xpath_change_2": "//*[@id='anchor-page-1']/div/div[3]/div[1]/div/div/div/div[1]/div[3]/span[2]",
+                "xpath_volumn": "//*[@id='anchor-page-1']/div/div[3]/div[3]/div[3]/div[1]",
                 "database": self.database_currency
             })
             currency.start()
@@ -124,39 +125,77 @@ class RealtimeCrawler:
     def get_value_element(self, selector):
         value = self.driver.find_element_by_xpath(selector).text
         # print(value)
-        return value
+        return float(value)
 
-    def get_realtime_data(self, table, symbol, type, wait_time, xpath_value, xpath_change_1, xpath_change_2, database):
+    def get_volumn_element(self, selector):
+        value = self.driver.find_element_by_xpath(selector).text
+        value = value.replace('K', '')
+        return float(value)*1000
+
+    def get_realtime_data(self, table, symbol, type, wait_time, xpath_value, xpath_change_1, xpath_change_2, xpath_volumn, database):
         self.wait.until(EC.visibility_of_element_located((By.XPATH, xpath_value)))
         stock_value = self.get_value_element(xpath_value)
 
+        old_volumn_value = 0
+
+        if datetime.now().second != 00 :
+            time.sleep(60-datetime.now().second)
+
         while True:
             try:
-                # VNIndex
-                new_value = self.get_value_element(xpath_value)
-                WebDriverWait(self.driver, wait_time, poll_frequency=1).until(lambda value: new_value != stock_value)
-                stock_value = new_value
                 # moment = datetime.now()
                 if type == 0:
                     # CURRENCY
+
+                    if old_volumn_value == 0:
+                        old_volumn_value = self.get_volumn_element(xpath_volumn)
+                        old_currency_value = self.get_value_element(xpath_value)
+
+                    # self.driver.implicitly_wait(10)
+                    time.sleep(60-datetime.now().second)
+                    new_currency_value = self.get_value_element(xpath_value)
+                    new_volumn_value = self.get_volumn_element(xpath_volumn)
+
+                    volumn = new_volumn_value - old_volumn_value
+                    # print(new_currency_value, old_currency_value, volumn)
+                    if new_currency_value > old_currency_value:
+                        high = new_currency_value,
+                        low = old_currency_value
+                    else:
+                        low = new_currency_value,
+                        high = old_currency_value
+
+                    old_volumn_value = new_volumn_value
+                    old_currency_value = new_currency_value
+
                     change_1 = self.driver.find_element_by_xpath(xpath_change_1).text
                     change_2 = self.driver.find_element_by_xpath(xpath_change_2).text
                 else:
+                    new_value = self.get_value_element(xpath_value)
+                    WebDriverWait(self.driver, wait_time, poll_frequency=1).until(
+                        lambda value: new_value != stock_value)
+                    stock_value = new_value
                     # STOCK
                     change = self.driver.find_element_by_xpath(xpath_change_1).text
                     change = change.replace(" ", "")
                     change_1 = re.match(r'(.*?)\(.*', change).group(1)
                     change_2 = re.match(r'.*?\((.*?)\).*', change).group(1)
+                    volumn = 0,
+                    high = 0,
+                    low = 0
 
                 # Save to database / currency_in_day
-                logging.info(str(datetime.now()) + ": " + table + " " + symbol + " " + new_value + " " + change_1 + " " + change_2)
+                logging.info(str(datetime.now()) + ": " + table + " " + symbol + " " + str(high) + " " + str(low) + " " + str(volumn))
                 database.insert_data_realtime(
                     table=table,
                     symbol=symbol,
-                    value=new_value,
+                    value=0,
                     change_1=change_1,
                     change_2=change_2.replace("(", "").replace(")", ""),
-                    moment=datetime.now()
+                    moment=datetime.now(),
+                    high=high,
+                    low=low,
+                    volumn=volumn
                 )
 
             except TimeoutException:
@@ -188,18 +227,24 @@ class RealtimeCrawler:
 
 
 if __name__ == '__main__':
+    # print(datetime.now().second)
+    # while True:
+    #     if datetime.now().second != 00 :
+    #         time.sleep(60-datetime.now().second)
+    #         print(datetime.now())
+
     currency = threading.Thread(target=RealtimeCrawler, kwargs={
         'type': 0
     })
-    stocks = threading.Thread(target=RealtimeCrawler, kwargs={
-        'type': 1
-    })
-
+    # # stocks = threading.Thread(target=RealtimeCrawler, kwargs={
+    # #     'type': 1
+    # # })
+    #
     currency.start()
-    stocks.start()
+    # # stocks.start()
 
     currency.join()
-    stocks.join()
+    # # stocks.join()
 
 
 
