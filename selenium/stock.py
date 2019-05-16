@@ -137,7 +137,7 @@ class RealtimeCrawler:
         stock_value = self.get_value_element(xpath_value)
 
         old_volumn_value = 0
-
+        close = 0
         if datetime.now().second != 00 :
             time.sleep(60-datetime.now().second)
 
@@ -146,30 +146,42 @@ class RealtimeCrawler:
                 # moment = datetime.now()
                 if type == 0:
                     # CURRENCY
-
                     if old_volumn_value == 0:
                         old_volumn_value = self.get_volumn_element(xpath_volumn)
-                        old_currency_value = self.get_value_element(xpath_value)
+                        open = self.get_value_element(xpath_value)
+                    else:
+                        open = close
 
-                    # self.driver.implicitly_wait(10)
-                    time.sleep(60-datetime.now().second)
-                    new_currency_value = self.get_value_element(xpath_value)
+                    # get high/low
+                    high = open
+                    low = open
+                    time_remaining = 60-datetime.now().second
+                    while True:
+                        if time_remaining <= wait_time or time_remaining <= 2:
+                            break
+                        else:
+                            new_value = self.get_value_element(xpath_value)
+                            if new_value > high:
+                                high = new_value
+                            elif new_value < low:
+                                low = new_value
+                            time.sleep(wait_time)
+
+                        time_remaining = 60-datetime.now().second
+
+                    close = self.get_value_element(xpath_value)
                     new_volumn_value = self.get_volumn_element(xpath_volumn)
 
-                    volumn = new_volumn_value - old_volumn_value
-                    # print(new_currency_value, old_currency_value, volumn)
-                    if new_currency_value > old_currency_value:
-                        high = new_currency_value,
-                        low = old_currency_value
-                    else:
-                        low = new_currency_value,
-                        high = old_currency_value
-
+                    volumn = int(new_volumn_value - old_volumn_value)
                     old_volumn_value = new_volumn_value
-                    old_currency_value = new_currency_value
+
+                    logging.info("Currency change | "
+                                 + str(datetime.now()) +": open="+  str(open) +", high="+ str(high) +", low="+ str(low)
+                                                                    +", close="+ str(close) +", volumn="+ str(volumn))
 
                     change_1 = self.driver.find_element_by_xpath(xpath_change_1).text
                     change_2 = self.driver.find_element_by_xpath(xpath_change_2).text
+                    time.sleep(60-datetime.now().second)
                 else:
                     new_value = self.get_value_element(xpath_value)
                     WebDriverWait(self.driver, wait_time, poll_frequency=1).until(
@@ -182,10 +194,12 @@ class RealtimeCrawler:
                     change_2 = re.match(r'.*?\((.*?)\).*', change).group(1)
                     volumn = 0,
                     high = 0,
-                    low = 0
+                    low = 0,
+                    open=0,
+                    close=0
 
                 # Save to database / currency_in_day
-                logging.info(str(datetime.now()) + ": " + table + " " + symbol + " " + str(high) + " " + str(low) + " " + str(volumn))
+                # logging.info(str(datetime.now()) + ": " + table + " " + symbol + " " + str(high) + " " + str(low) + " " + str(volumn))
                 database.insert_data_realtime(
                     table=table,
                     symbol=symbol,
@@ -193,13 +207,15 @@ class RealtimeCrawler:
                     change_1=change_1,
                     change_2=change_2.replace("(", "").replace(")", ""),
                     moment=datetime.now(),
+                    open=open,
                     high=high,
                     low=low,
+                    close=close,
                     volumn=volumn
                 )
 
             except TimeoutException:
-                time.sleep(2)
+                # time.sleep(2)
                 pass
 
     def _get_friends_list(self):

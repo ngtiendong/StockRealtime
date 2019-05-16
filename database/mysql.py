@@ -8,7 +8,7 @@ from global_config import *
 
 class MySQL():
     def __init__(self):
-        # os.environ['TZ'] = 'Asia/Ho_Chi_Minh'
+        os.environ['TZ'] = 'UTC'
         self.connection = pymysql.connect(DB_HOST, DB_USERNAME, DB_PASSWORD, DB_DATABASE, DB_PORT)
 
     def close(self):
@@ -66,15 +66,17 @@ class MySQL():
             # commit
             self.connection.commit()
 
-    def insert_data_realtime(self, table, symbol, value, change_1, change_2, moment, volumn, high, low):
+    def insert_data_realtime(self, table, symbol, value, change_1, change_2, moment, open, high, low, close, volumn):
         with self.connection.cursor() as cursor:
-            sql_insert = "INSERT INTO `"+table+"` (`symbol`, `value`, `high`, `low`, `volumn`, `change_1`, `change_2`, `moment`, `created_at`)" \
-                         " VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
+            sql_insert = "INSERT INTO `"+table+"` (`symbol`, `value`, `open`, `high`, `low`, `close`,`volumn`, `change_1`, `change_2`, `moment`, `created_at`)" \
+                         " VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
             cursor.execute(sql_insert, (
                 symbol,
                 value,
+                open,
                 high,
                 low,
+                close,
                 volumn,
                 change_1,
                 change_2,
