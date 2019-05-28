@@ -146,43 +146,48 @@ class RealtimeCrawler:
                 # moment = datetime.now()
                 if type == 0:
                     # CURRENCY
-                    if old_volumn_value == 0:
-                        old_volumn_value = self.get_volumn_element(xpath_volumn)
-                        open = self.get_value_element(xpath_value)
-                    else:
-                        open = close
-
-                    # get high/low
-                    high = open
-                    low = open
-                    time_remaining = 60-datetime.now().second
-                    while True:
-                        if time_remaining <= wait_time or time_remaining <= 2:
-                            break
-                        else:
-                            new_value = self.get_value_element(xpath_value)
-                            if new_value > high:
-                                high = new_value
-                            elif new_value < low:
-                                low = new_value
-                            time.sleep(wait_time)
-
-                        time_remaining = 60-datetime.now().second
-
-                    close = self.get_value_element(xpath_value)
-                    new_volumn_value = self.get_volumn_element(xpath_volumn)
-
-                    volumn = int(new_volumn_value - old_volumn_value)
-                    old_volumn_value = new_volumn_value
-
-                    logging.info("Currency change | "
-                                 + str(datetime.now()) +": open="+  str(open) +", high="+ str(high) +", low="+ str(low)
-                                                                    +", close="+ str(close) +", volumn="+ str(volumn))
-
+                    open = high = low = close = change_1 = change_2 = 0
+                    value = self.get_value_element(xpath_value)
+                    volumn = self.get_volumn_element(xpath_volumn)
+                    time.sleep(0.98)
+                    # if old_volumn_value == 0:
+                    #     old_volumn_value = self.get_volumn_element(xpath_volumn)
+                    #     open = self.get_value_element(xpath_value)
+                    # else:
+                    #     open = close
+                    #
+                    # # get high/low
+                    # high = open
+                    # low = open
+                    # time_remaining = 60-datetime.now().second
+                    # while True:
+                    #     if time_remaining <= wait_time or time_remaining <= 2:
+                    #         break
+                    #     else:
+                    #         new_value = self.get_value_element(xpath_value)
+                    #         if new_value > high:
+                    #             high = new_value
+                    #         elif new_value < low:
+                    #             low = new_value
+                    #         time.sleep(wait_time)
+                    #
+                    #     time_remaining = 60-datetime.now().second
+                    #
+                    # close = self.get_value_element(xpath_value)
+                    # new_volumn_value = self.get_volumn_element(xpath_volumn)
+                    #
+                    # volumn = int(new_volumn_value - old_volumn_value)
+                    # old_volumn_value = new_volumn_value
+                    #
+                    # logging.info("Currency change | "
+                    #              + str(datetime.now()) +": open="+  str(open) +", high="+ str(high) +", low="+ str(low)
+                    #                                                 +", close="+ str(close) +", volumn="+ str(volumn))
+                    #
                     change_1 = self.driver.find_element_by_xpath(xpath_change_1).text
                     change_2 = self.driver.find_element_by_xpath(xpath_change_2).text
-                    time.sleep(60-datetime.now().second)
+                    # time.sleep(60-datetime.now().second)
                 else:
+                    value=0
                     new_value = self.get_value_element(xpath_value)
                     WebDriverWait(self.driver, wait_time, poll_frequency=1).until(
                         lambda value: new_value != stock_value)
@@ -203,7 +208,7 @@ class RealtimeCrawler:
                 database.insert_data_realtime(
                     table=table,
                     symbol=symbol,
-                    value=0,
+                    value=value,
                     change_1=change_1,
                     change_2=change_2.replace("(", "").replace(")", ""),
                     moment=datetime.now(),
@@ -243,10 +248,13 @@ class RealtimeCrawler:
 
 
 if __name__ == '__main__':
-    # print(datetime.now().second)
+    # import time as time_
+    # print(int(round(time_.time())), datetime.now().microsecond, datetime.now().second)
     # while True:
-    #     if datetime.now().second != 00 :
-    #         time.sleep(60-datetime.now().second)
+    #     old = int(round(time_.time()))
+    #     if datetime.now().microsecond != 00 :
+    #         print(1000-int(round(time_.time()))+old)
+    #         time.sleep(1000-int(round(time_.time()))+old)
     #         print(datetime.now())
 
     currency = threading.Thread(target=RealtimeCrawler, kwargs={
