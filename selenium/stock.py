@@ -132,12 +132,23 @@ class RealtimeCrawler:
         value = value.replace('K', '')
         return float(value)*1000
 
+    def parse_date(self):
+        now = datetime.now()
+        date = str(now.year) + self.add_before_date(str(now.month))\
+               + self.add_before_date(str(now.day)) + self.add_before_date(str(now.hour))\
+               + self.add_before_date(str(now.minute)) + self.add_before_date(str(now.second))
+        return date
+
+    def add_before_date(self, date):
+        return "0"+date if len(date) < 2 else date
+
     def get_realtime_data(self, table, symbol, type, wait_time, xpath_value, xpath_change_1, xpath_change_2, xpath_volumn, database):
         self.wait.until(EC.visibility_of_element_located((By.XPATH, xpath_value)))
         stock_value = self.get_value_element(xpath_value)
 
         old_volumn_value = 0
         close = 0
+        date = ""
         if datetime.now().second != 00 :
             time.sleep(60-datetime.now().second)
 
@@ -149,7 +160,6 @@ class RealtimeCrawler:
                     open = high = low = close = change_1 = change_2 = 0
                     value = self.get_value_element(xpath_value)
                     volumn = self.get_volumn_element(xpath_volumn)
-                    time.sleep(0.98)
                     # if old_volumn_value == 0:
                     #     old_volumn_value = self.get_volumn_element(xpath_volumn)
                     #     open = self.get_value_element(xpath_value)
@@ -183,8 +193,10 @@ class RealtimeCrawler:
                     #              + str(datetime.now()) +": open="+  str(open) +", high="+ str(high) +", low="+ str(low)
                     #                                                 +", close="+ str(close) +", volumn="+ str(volumn))
                     #
+                    date=self.parse_date()
                     change_1 = self.driver.find_element_by_xpath(xpath_change_1).text
                     change_2 = self.driver.find_element_by_xpath(xpath_change_2).text
+                    time.sleep(0.95)
                     # time.sleep(60-datetime.now().second)
                 else:
                     value=0
@@ -209,6 +221,7 @@ class RealtimeCrawler:
                     table=table,
                     symbol=symbol,
                     value=value,
+                    date=date,
                     change_1=change_1,
                     change_2=change_2.replace("(", "").replace(")", ""),
                     moment=datetime.now(),

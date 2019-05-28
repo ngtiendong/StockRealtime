@@ -66,13 +66,14 @@ class MySQL():
             # commit
             self.connection.commit()
 
-    def insert_data_realtime(self, table, symbol, value, change_1, change_2, moment, open, high, low, close, volumn):
+    def insert_data_realtime(self, table, symbol, value, date, change_1, change_2, moment, open, high, low, close, volumn):
         with self.connection.cursor() as cursor:
-            sql_insert = "INSERT INTO `"+table+"` (`symbol`, `value`, `open`, `high`, `low`, `close`,`volumn`, `change_1`, `change_2`, `moment`, `created_at`)" \
-                         " VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+            sql_insert = "INSERT INTO `"+table+"` (`symbol`, `value`, `date`, `open`, `high`, `low`, `close`,`volumn`, `change_1`, `change_2`, `moment`, `created_at`)" \
+                         " VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
             cursor.execute(sql_insert, (
                 symbol,
                 value,
+                date,
                 open,
                 high,
                 low,
